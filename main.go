@@ -1,49 +1,33 @@
 package main
 
 import (
-	"fmt"
+	"flag"
 	"log"
 
-	"github.com/fsnotify/fsnotify"
+	"github.com/patito/FileWatcher/configuration"
+	"github.com/patito/FileWatcher/watcher"
 )
 
-type FileWatcher struct {
-	*fsnotify.Watcher
-}
+func main() {
 
-func (watcher *FileWatcher) FileWatcherEvents() {
-	for {
-		select {
-		case event := <-watcher.Events:
-			fmt.Println("event:", event)
-			fmt.Println("File Name:", event.Name)
-		case err := <-watcher.Errors:
-			fmt.Println("error:", err)
-		}
-	}
-}
-
-func NewFileWatcher() *FileWatcher {
-	watcher, err := fsnotify.NewWatcher()
+	configFlag := flag.String("config", "configuration/config.gcfg", "Configuration file")
+	newConf, err := configuration.NewConfiguration(*configFlag)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	fileWatcher := &FileWatcher{watcher}
-
-	return fileWatcher
-}
-
-func main() {
-	watcher := NewFileWatcher()
+	watcher, err := watcher.NewFileWatcher()
+	if err != nil {
+		log.Fatal(err)
+	}
 	defer watcher.Close()
 
 	done := make(chan bool)
-	go watcher.FileWatcherEvents()
 
-	err := watcher.Add("/tmp/foo")
-	if err != nil {
+	if err = watcher.SetPath(newConf.Folder.Path); err != nil {
 		log.Fatal(err)
 	}
+	go watcher.Listen()
+
 	<-done
 }

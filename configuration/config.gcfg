@@ -1,0 +1,6 @@
+;Main configuration file for the application in test mode
+[server]
+    address=10.152.253.89
+    port=:1111
+[folder]
+    path=/tmp/foo
